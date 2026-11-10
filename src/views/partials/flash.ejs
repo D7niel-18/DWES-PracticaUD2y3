@@ -1,0 +1,4 @@
+<%# PARCIAL: mensaje de confirmación de un solo uso. Se escapa el HTML del texto. %>
+<% if (flash) { %>
+  <div class="aviso <%= flash.tipo %>" role="status"><%= flash.texto %></div>
+<% } %>

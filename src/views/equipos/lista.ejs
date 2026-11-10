@@ -1,0 +1,42 @@
+<%- include('../partials/cabecera') %>
+<h1>Equipos del centro</h1>
+
+<%# Formulario de filtros: usa GET, así los filtros quedan en la URL %>
+<form method="get" action="/equipos" class="tarjeta">
+  <div class="campo">
+    <label for="tipo">Tipo de equipo</label>
+    <select id="tipo" name="tipo">
+      <option value="" <%= filtros.tipo === '' ? 'selected' : '' %>>Todos</option>
+      <option value="portatil" <%= filtros.tipo === 'portatil' ? 'selected' : '' %>>Portátil</option>
+      <option value="sobremesa" <%= filtros.tipo === 'sobremesa' ? 'selected' : '' %>>Sobremesa</option>
+    </select>
+  </div>
+  <div class="campo">
+    <label>
+      <input type="checkbox" name="operativos" value="true" <%= filtros.operativos ? 'checked' : '' %>>
+      Mostrar solo equipos operativos
+    </label>
+  </div>
+  <button class="accion" type="submit">Filtrar</button>
+  <p><small>Recordamos tu tipo preferido con una cookie y lo usamos como filtro inicial.</small></p>
+</form>
+
+<% if (equipos.length === 0) { %>
+  <p>No hay equipos que coincidan con el filtro.</p>
+<% } else { %>
+  <table>
+    <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+      <% equipos.forEach((equipo) => { %>
+        <tr>
+          <td><%= equipo.codigo %></td>
+          <td><%= equipo.nombre %></td>
+          <td><%= etiquetaTipo(equipo.tipo) %></td>
+          <td><span class="etiqueta <%= equipo.estado === 'operativo' ? 'ok' : 'mal' %>"><%= etiquetaEstadoEquipo(equipo.estado) %></span></td>
+          <td><a href="/equipos/<%= equipo.id %>">Ver ficha</a></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>
+<%- include('../partials/pie') %>

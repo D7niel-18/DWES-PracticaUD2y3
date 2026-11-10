@@ -1,0 +1,15 @@
+<%- include('../partials/cabecera') %>
+<h1><%= equipo.nombre %></h1>
+<div class="tarjeta">
+  <p><strong>Código:</strong> <%= equipo.codigo %></p>
+  <p><strong>Tipo:</strong> <%= etiquetaTipo(equipo.tipo) %></p>
+  <p><strong>Estado:</strong>
+    <span class="etiqueta <%= equipo.estado === 'operativo' ? 'ok' : 'mal' %>"><%= etiquetaEstadoEquipo(equipo.estado) %></span>
+  </p>
+  <p><small>La disponibilidad real depende de la fecha y del turno que elijas al reservar.</small></p>
+  <% if (equipo.estado === 'operativo') { %>
+    <a href="/reservas/nueva">Reservar un equipo</a>
+  <% } %>
+</div>
+<p><a href="/equipos">← Volver al listado</a></p>
+<%- include('../partials/pie') %>

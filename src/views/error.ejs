@@ -1,0 +1,6 @@
+<%- include('partials/cabecera') %>
+<h1>Error <%= estado %></h1>
+<%# Solo se muestra un mensaje seguro: nunca trazas ni datos internos %>
+<div class="aviso error"><%= mensaje %></div>
+<p><a href="/equipos">Volver al inicio</a></p>
+<%- include('partials/pie') %>

@@ -1,0 +1,54 @@
+<%- include('../partials/cabecera') %>
+<h1>Nueva reserva</h1>
+
+<% if (mensajeError) { %><div class="aviso error"><%= mensajeError %></div><% } %>
+
+<%# PASO 1: elegir fecha y turno. Es un formulario GET: consulta la disponibilidad. %>
+<form method="get" action="/reservas/nueva" class="tarjeta">
+  <h2>1. Elige fecha y turno</h2>
+  <div class="campo">
+    <label for="fecha">Fecha</label>
+    <input id="fecha" name="fecha" type="date" min="<%= hoy %>" value="<%= valores.fecha %>" required>
+    <% if (errores.fecha) { %><p class="msg-error"><%= errores.fecha %></p><% } %>
+  </div>
+  <div class="campo">
+    <label for="turno">Turno</label>
+    <select id="turno" name="turno" required>
+      <option value="">-- Elige --</option>
+      <% turnos.forEach((t) => { %>
+        <option value="<%= t.valor %>" <%= valores.turno === t.valor ? 'selected' : '' %>><%= t.etiqueta %></option>
+      <% }) %>
+    </select>
+    <% if (errores.turno) { %><p class="msg-error"><%= errores.turno %></p><% } %>
+  </div>
+  <button class="accion" type="submit">Ver equipos disponibles</button>
+</form>
+
+<%# PASO 2: solo aparece si fecha y turno son correctos. Las opciones dependen de los equipos libres. %>
+<% if (consultaLista) { %>
+  <form method="post" action="/reservas" class="tarjeta">
+    <h2>2. Elige un equipo (<%= valores.fecha %>, <%= etiquetaTurno(valores.turno) %>)</h2>
+    <%- include('../partials/csrf') %>
+    <input type="hidden" name="fecha" value="<%= valores.fecha %>">
+    <input type="hidden" name="turno" value="<%= valores.turno %>">
+
+    <% if (equiposDisponibles.length === 0) { %>
+      <p>No hay equipos disponibles en esa fecha y turno. Prueba con otro.</p>
+    <% } else { %>
+      <div class="campo">
+        <label for="equipoId">Equipo disponible</label>
+        <select id="equipoId" name="equipoId" required>
+          <option value="">-- Elige --</option>
+          <% equiposDisponibles.forEach((equipo) => { %>
+            <option value="<%= equipo.id %>" <%= valores.equipoId === String(equipo.id) ? 'selected' : '' %>>
+              <%= equipo.codigo %> – <%= equipo.nombre %>
+            </option>
+          <% }) %>
+        </select>
+        <% if (errores.equipoId) { %><p class="msg-error"><%= errores.equipoId %></p><% } %>
+      </div>
+      <button class="accion" type="submit">Reservar</button>
+    <% } %>
+  </form>
+<% } %>
+<%- include('../partials/pie') %>

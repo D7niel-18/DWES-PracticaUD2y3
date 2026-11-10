@@ -1,0 +1,59 @@
+<%- include('../partials/cabecera') %>
+<h1>Administrar equipos</h1>
+<% if (mensajeError) { %><div class="aviso error"><%= mensajeError %></div><% } %>
+
+<form method="post" action="/admin/equipos" class="tarjeta">
+  <h2>Añadir equipo</h2>
+  <%- include('../partials/csrf') %>
+  <div class="campo">
+    <label for="codigo">Código (ej. PC-010)</label>
+    <input id="codigo" name="codigo" value="<%= valores.codigo || '' %>" required>
+    <% if (errores.codigo) { %><p class="msg-error"><%= errores.codigo %></p><% } %>
+  </div>
+  <div class="campo">
+    <label for="nombre">Nombre</label>
+    <input id="nombre" name="nombre" value="<%= valores.nombre || '' %>" required>
+    <% if (errores.nombre) { %><p class="msg-error"><%= errores.nombre %></p><% } %>
+  </div>
+  <div class="campo">
+    <label for="tipo">Tipo</label>
+    <select id="tipo" name="tipo" required>
+      <option value="">-- Elige --</option>
+      <option value="sobremesa" <%= valores.tipo === 'sobremesa' ? 'selected' : '' %>>Sobremesa</option>
+      <option value="portatil" <%= valores.tipo === 'portatil' ? 'selected' : '' %>>Portátil</option>
+    </select>
+    <% if (errores.tipo) { %><p class="msg-error"><%= errores.tipo %></p><% } %>
+  </div>
+  <div class="campo">
+    <label for="estado">Estado inicial</label>
+    <select id="estado" name="estado">
+      <option value="operativo">Operativo</option>
+      <option value="fuera_de_servicio" <%= valores.estado === 'fuera_de_servicio' ? 'selected' : '' %>>Fuera de servicio</option>
+    </select>
+    <% if (errores.estado) { %><p class="msg-error"><%= errores.estado %></p><% } %>
+  </div>
+  <button class="accion" type="submit">Añadir</button>
+</form>
+
+<table>
+  <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Estado</th><th>Cambiar estado</th></tr></thead>
+  <tbody>
+    <% equipos.forEach((equipo) => { %>
+      <% const nuevoEstado = equipo.estado === 'operativo' ? 'fuera_de_servicio' : 'operativo'; %>
+      <tr>
+        <td><%= equipo.codigo %></td>
+        <td><%= equipo.nombre %></td>
+        <td><%= etiquetaTipo(equipo.tipo) %></td>
+        <td><span class="etiqueta <%= equipo.estado === 'operativo' ? 'ok' : 'mal' %>"><%= etiquetaEstadoEquipo(equipo.estado) %></span></td>
+        <td>
+          <form class="en-linea" method="post" action="/admin/equipos/<%= equipo.id %>/estado">
+            <%- include('../partials/csrf') %>
+            <input type="hidden" name="estado" value="<%= nuevoEstado %>">
+            <button class="accion" type="submit">Marcar como <%= etiquetaEstadoEquipo(nuevoEstado).toLowerCase() %></button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+<%- include('../partials/pie') %>

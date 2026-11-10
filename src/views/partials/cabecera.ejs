@@ -1,0 +1,60 @@
+<%# PARCIAL: cabecera común (HTML inicial, estilos y menú de navegación) %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= titulo %> · Reserva de equipos</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #f5f6f8; color: #222; }
+    header { background: #1f3a5f; padding: .7rem 1rem; }
+    nav { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+    nav a, nav button { color: #fff; text-decoration: none; background: none; border: 0; font: inherit; cursor: pointer; padding: 0; }
+    nav .derecha { margin-left: auto; display: flex; gap: 1rem; align-items: center; }
+    nav form { margin: 0; }
+    main { max-width: 900px; margin: 1.5rem auto; padding: 0 1rem; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { padding: .5rem; border-bottom: 1px solid #ddd; text-align: left; }
+    .aviso { padding: .7rem 1rem; border-radius: 4px; margin-bottom: 1rem; }
+    .exito { background: #d9f2e3; }
+    .error { background: #fbdcdc; }
+    .campo { margin-bottom: 1rem; }
+    .campo label { display: block; font-weight: 600; margin-bottom: .2rem; }
+    .campo input, .campo select { padding: .4rem; min-width: 250px; }
+    .msg-error { color: #b00020; font-size: .9rem; margin: .2rem 0 0; }
+    .etiqueta { padding: .1rem .5rem; border-radius: 10px; font-size: .85rem; background: #e3e8ef; }
+    .ok { background: #d9f2e3; } .mal { background: #fbdcdc; }
+    button.accion { padding: .4rem .9rem; cursor: pointer; }
+    form.en-linea { display: inline; }
+    .tarjeta { background: #fff; padding: 1rem 1.2rem; border-radius: 6px; margin-bottom: 1.5rem; }
+  </style>
+</head>
+<body>
+<header>
+  <nav>
+    <a href="/equipos">Equipos</a>
+    <% if (usuario) { %>
+      <a href="/reservas/nueva">Nueva reserva</a>
+      <a href="/mis-reservas">Mis reservas</a>
+      <% if (usuario.rol === 'admin') { %>
+        <a href="/admin/equipos">Admin: equipos</a>
+        <a href="/admin/reservas">Admin: reservas</a>
+      <% } %>
+      <span class="derecha">
+        <a href="/perfil"><%= usuario.nombre %></a>
+        <%# El cierre de sesión también es un formulario POST con token CSRF %>
+        <form method="post" action="/logout">
+          <%- include('csrf') %>
+          <button type="submit">Salir</button>
+        </form>
+      </span>
+    <% } else { %>
+      <span class="derecha">
+        <a href="/login">Iniciar sesión</a>
+        <a href="/registro">Registrarse</a>
+      </span>
+    <% } %>
+  </nav>
+</header>
+<main>
+<%- include('flash') %>

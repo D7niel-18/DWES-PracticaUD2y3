@@ -1,0 +1,35 @@
+<%# PARCIAL reutilizable: tabla de reservas.
+    Recibe:  reservas, mostrarUsuario (true/false) y rutaCancelar
+    (a dónde se envía el formulario de cancelar). %>
+<% if (reservas.length === 0) { %>
+  <p>No hay reservas que mostrar.</p>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th><th>Turno</th><th>Equipo</th>
+        <% if (mostrarUsuario) { %><th>Usuario</th><% } %>
+        <th>Estado</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% reservas.forEach((reserva) => { %>
+        <tr>
+          <td><%= reserva.fecha %></td>
+          <td><%= etiquetaTurno(reserva.turno) %></td>
+          <td><%= reserva.equipoCodigo %> – <%= reserva.equipoNombre %></td>
+          <% if (mostrarUsuario) { %><td><%= reserva.usuarioNombre %></td><% } %>
+          <td><span class="etiqueta <%= reserva.estado === 'activa' ? 'ok' : 'mal' %>"><%= etiquetaEstadoReserva(reserva.estado) %></span></td>
+          <td>
+            <% if (reserva.cancelable) { %>
+              <form class="en-linea" method="post" action="<%= rutaCancelar %>/<%= reserva.id %>/cancelar">
+                <%- include('csrf') %>
+                <button class="accion" type="submit">Cancelar</button>
+              </form>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } %>

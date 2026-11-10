@@ -1,0 +1,5 @@
+<%- include('../partials/cabecera') %>
+<h1>Mis reservas</h1>
+<%- include('../partials/tabla-reservas', { reservas, mostrarUsuario: false, rutaCancelar: '/reservas' }) %>
+<p><a href="/reservas/nueva">Hacer una nueva reserva</a></p>
+<%- include('../partials/pie') %>
