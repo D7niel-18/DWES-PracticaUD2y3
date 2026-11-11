@@ -1,43 +1,31 @@
-'use strict';
+// ============================================================
+// AYUDAS PARA LA SESIÓN
+// ------------------------------------------------------------
+// express-session trabaja con "callbacks" (funciones de retorno).
+// Aquí los convertimos en promesas para poder usar await,
+// que se lee de forma mucho más natural.
+// ============================================================
 
-/**
- * Regenera el ID de la sesión para prevenir Session Fixation.
- */
+// Crea una sesión NUEVA con un identificador distinto (evita la
+// "fijación de sesión"). Se usa justo al iniciar sesión.
 function regenerarSesion(req) {
-  return new Promise((resolve, reject) => {
-    req.session.regenerate((err) => {
-      if (err) return reject(err);
-      resolve();
-    });
+  return new Promise((resolver, rechazar) => {
+    req.session.regenerate((error) => (error ? rechazar(error) : resolver()));
   });
 }
 
-/**
- * Guarda manualmente la sesión en el almacenamiento.
- */
+// Guarda la sesión en el servidor
 function guardarSesion(req) {
-  return new Promise((resolve, reject) => {
-    req.session.save((err) => {
-      if (err) return reject(err);
-      resolve();
-    });
+  return new Promise((resolver, rechazar) => {
+    req.session.save((error) => (error ? rechazar(error) : resolver()));
   });
 }
 
-/**
- * Destruye la sesión del servidor (logout).
- */
+// Borra la sesión del servidor (cierre de sesión)
 function destruirSesion(req) {
-  return new Promise((resolve, reject) => {
-    req.session.destroy((err) => {
-      if (err) return reject(err);
-      resolve();
-    });
+  return new Promise((resolver, rechazar) => {
+    req.session.destroy((error) => (error ? rechazar(error) : resolver()));
   });
 }
 
-module.exports = {
-  regenerarSesion,
-  guardarSesion,
-  destruirSesion,
-};
+module.exports = { regenerarSesion, guardarSesion, destruirSesion };

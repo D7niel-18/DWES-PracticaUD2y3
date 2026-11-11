@@ -1,3 +1,9 @@
+// ============================================================
+// SERVER.JS: ARRANCA EL SERVIDOR
+// ------------------------------------------------------------
+// Este es el único archivo que abre un puerto de red.
+// ============================================================
+
 const cargarConfiguracion = require("./config/config");
 const { crearApp } = require("./app");
 

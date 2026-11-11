@@ -1,61 +1,67 @@
-// Función base: crea un error normal de JavaScript y le añade datos extra
-//   mensaje : texto que se puede mostrar al usuario
-//   estado  : código HTTP (400, 401, 403...)
-//   errores : errores por campo, por ejemplo { fecha: "mensaje" }
-//   tipo    : nombre corto para reconocer qué error es
+// Son errores "previstos": cosas que pueden pasar en el uso normal
+// (reserva duplicada, equipo inexistente, falta de permisos...).
+// Cada uno lleva el código HTTP que le corresponde.
+// El tratamiento centralizado de errores los convierte en páginas.
 
-function crearErrorDominio(mensaje, estado = 500, errores = {}, tipo = "dominio") {
-  const error = new Error(mensaje);
-  error.name = "ErrorDominio";
-  error.esDominio = true; // marca para distinguirlo de los errores inesperados
-  error.tipo = tipo;
-  error.estado = estado;
-  error.errores = errores;
-  return error;
-}
 
-// ¿Es un error previsto de nuestra aplicación?
-function esErrorDominio(error) {
-  return Boolean(error) && error.esDominio === true;
+// Error base: todos los demás heredan de él
+class ErrorDominio extends Error {
+  constructor(mensaje, estado = 500, errores = {}) {
+    super(mensaje);
+    this.name = this.constructor.name;
+    this.estado = estado; // código HTTP (400, 401, 403...)
+    this.errores = errores; // errores por campo: { fecha: "mensaje" }
+  }
 }
 
 // 400: los datos enviados no son correctos
-function crearErrorValidacion(errores = {}, mensaje = "Los datos enviados no son válidos.") {
-  return crearErrorDominio(mensaje, 400, errores, "validacion");
+class ErrorValidacion extends ErrorDominio {
+  constructor(errores = {}, mensaje = "Los datos enviados no son válidos.") {
+    super(mensaje, 400, errores);
+  }
 }
 
 // 401: credenciales incorrectas (mensaje genérico a propósito)
-function crearErrorCredenciales() {
-  return crearErrorDominio("Correo o contraseña incorrectos.", 401, {}, "credenciales");
+class ErrorCredenciales extends ErrorDominio {
+  constructor() {
+    super("Correo o contraseña incorrectos.", 401);
+  }
 }
 
 // 403: usuario identificado pero sin permiso
-function crearErrorPermisos(mensaje = "No tienes permisos para realizar esta acción.") {
-  return crearErrorDominio(mensaje, 403, {}, "permisos");
+class ErrorPermisos extends ErrorDominio {
+  constructor(mensaje = "No tienes permisos para realizar esta acción.") {
+    super(mensaje, 403);
+  }
 }
 
 // 404: el recurso no existe
-function crearErrorNoEncontrado(mensaje = "El recurso solicitado no existe.") {
-  return crearErrorDominio(mensaje, 404, {}, "no_encontrado");
+class ErrorNoEncontrado extends ErrorDominio {
+  constructor(mensaje = "El recurso solicitado no existe.") {
+    super(mensaje, 404);
+  }
 }
 
 // 409: conflicto (por ejemplo, equipo ya reservado en ese turno)
-function crearErrorConflicto(mensaje, errores = {}) {
-  return crearErrorDominio(mensaje, 409, errores, "conflicto");
+class ErrorConflicto extends ErrorDominio {
+  constructor(mensaje, errores = {}) {
+    super(mensaje, 409, errores);
+  }
 }
 
 // 429: demasiados intentos de login
-function crearErrorDemasiadasPeticiones() {
-  return crearErrorDominio("Demasiados intentos. Espera unos minutos e inténtalo de nuevo.", 429, {}, "limite");
+class ErrorDemasiadasPeticiones extends ErrorDominio {
+  constructor() {
+    super("Demasiados intentos. Espera unos minutos e inténtalo de nuevo.", 429);
+  }
 }
 
 module.exports = {
-  crearErrorDominio,
-  esErrorDominio,
-  crearErrorValidacion,
-  crearErrorCredenciales,
-  crearErrorPermisos,
-  crearErrorNoEncontrado,
-  crearErrorConflicto,
-  crearErrorDemasiadasPeticiones,
+  ErrorDominio,
+  ErrorValidacion,
+  ErrorCredenciales,
+  ErrorPermisos,
+  ErrorNoEncontrado,
+  ErrorConflicto,
+  ErrorDemasiadasPeticiones,
 };

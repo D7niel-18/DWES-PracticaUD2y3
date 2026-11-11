@@ -1,74 +1,49 @@
-'use strict';
+const { ErrorValidacion } = require("../errors/errores");
+const { TIPOS_EQUIPO, texto, validarId } = require("../utils/validaciones");
+const { NOMBRE_COOKIE_PREFERENCIA, opcionesCookiePreferencia } = require("../config/cookies");
 
-const { TIPOS_EQUIPO, COOKIE_PREFERENCIAS } = require('../constants');
-const { ValidationError } = require('../errors');
-const { setFlash } = require('../middleware/flash');
-const { parseId } = require('../utils/reservas');
-
-/**
- * Filtros del catálogo. Si la petición no trae "tipo", se usa la cookie de
- * preferencias como filtro inicial (solo presentación, nunca autorización).
- */
-function leerFiltros(query, cookies) {
-  const filtros = { tipo: null, operativos: false };
-
-  if (query.tipo !== undefined) {
-    if (typeof query.tipo !== 'string' || (query.tipo !== '' && !TIPOS_EQUIPO.includes(query.tipo))) {
-      throw new ValidationError({ tipo: 'El tipo indicado no es válido.' });
-    }
-    filtros.tipo = query.tipo === '' ? null : query.tipo;
-  } else if (TIPOS_EQUIPO.includes(cookies[COOKIE_PREFERENCIAS])) {
-    filtros.tipo = cookies[COOKIE_PREFERENCIAS];
-  }
-
-  if (query.operativos !== undefined) {
-    if (query.operativos === 'true') filtros.operativos = true;
-    else if (query.operativos !== 'false') {
-      throw new ValidationError({ operativos: 'El filtro "operativos" debe ser true o false.' });
-    }
-  }
-  return filtros;
-}
-
-function crearEquiposController({ equipoService, opcionesCookiePreferencias }) {
+function crearEquiposController({ equiposService, config }) {
   return {
-    async listar(req, res) {
-      const filtros = leerFiltros(req.query, req.cookies || {});
-      const equipos = await equipoService.listar(filtros);
-      const cookie = (req.cookies || {})[COOKIE_PREFERENCIAS];
-      res.render('equipos/index', {
-        titulo: 'Equipos',
+    // GET /equipos?tipo=portatil&operativos=true
+    listar(req, res) {
+      let tipo = "";
+
+      if (req.query.tipo === undefined) {
+        // No se ha elegido filtro: usamos la COOKIE DE PREFERENCIAS.
+        // Solo se acepta si su valor es uno de los tipos permitidos.
+        const preferida = req.cookies[NOMBRE_COOKIE_PREFERENCIA];
+        tipo = TIPOS_EQUIPO.includes(preferida) ? preferida : "";
+      } else {
+        // El usuario ha elegido un filtro: se valida y se recuerda
+        tipo = texto(req.query.tipo);
+        if (tipo !== "" && !TIPOS_EQUIPO.includes(tipo)) {
+          throw new ErrorValidacion({ tipo: "Tipo no válido." }, "El tipo de equipo indicado no es válido.");
+        }
+        if (tipo === "") {
+          res.clearCookie(NOMBRE_COOKIE_PREFERENCIA); // "Todos" = sin preferencia
+        } else {
+          res.cookie(NOMBRE_COOKIE_PREFERENCIA, tipo, opcionesCookiePreferencia(config));
+        }
+      }
+
+      const operativos = req.query.operativos === "true";
+      const equipos = equiposService.listar({ tipo, operativos });
+
+      res.render("equipos/lista", {
+        titulo: "Equipos del centro",
         equipos,
-        filtros,
-        tipos: TIPOS_EQUIPO,
-        preferencia: TIPOS_EQUIPO.includes(cookie) ? cookie : null,
+        filtros: { tipo, operativos },
       });
     },
 
-    async detalle(req, res) {
-      const id = parseId(req.params.id);
-      if (id === null) {
-        throw new ValidationError({ id: 'El identificador del equipo no es válido.' });
-      }
-      const equipo = await equipoService.obtener(id);
-      res.render('equipos/detalle', { titulo: equipo.nombre, equipo });
-    },
-
-    guardarPreferencia(req, res) {
-      const tipo = req.body && req.body.tipo;
-      if (tipo === 'ninguno') {
-        const { maxAge, ...sinMaxAge } = opcionesCookiePreferencias;
-        res.clearCookie(COOKIE_PREFERENCIAS, sinMaxAge);
-        setFlash(req, 'exito', 'Preferencia eliminada.');
-      } else if (typeof tipo === 'string' && TIPOS_EQUIPO.includes(tipo)) {
-        res.cookie(COOKIE_PREFERENCIAS, tipo, opcionesCookiePreferencias);
-        setFlash(req, 'exito', 'Preferencia guardada. Se usará como filtro inicial del catálogo.');
-      } else {
-        throw new ValidationError({ tipo: 'El tipo preferido debe ser portátil, sobremesa o ninguno.' });
-      }
-      res.redirect(303, '/equipos');
+    // GET /equipos/:id
+    ficha(req, res) {
+      const id = validarId(req.params.id);
+      if (id === null) throw new ErrorValidacion({}, "El identificador del equipo no es válido.");
+      const equipo = equiposService.obtener(id); // lanza 404 si no existe
+      res.render("equipos/ficha", { titulo: equipo.nombre, equipo });
     },
   };
 }
 
-module.exports = { crearEquiposController, leerFiltros };
+module.exports = crearEquiposController;

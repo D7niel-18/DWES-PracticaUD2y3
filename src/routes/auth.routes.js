@@ -1,3 +1,9 @@
+// ============================================================
+// RUTAS DE AUTENTICACIÓN
+// ------------------------------------------------------------
+// Las rutas solo dicen: "método + URL + guardias + controlador".
+// ============================================================
+
 const express = require("express");
 const { requiereAutenticacion } = require("../middleware/auth");
 

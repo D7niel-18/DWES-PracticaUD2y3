@@ -1,7 +1,8 @@
 // El controlador recibe la petición (req), pide el trabajo al
 // servicio y decide qué responder (res). No contiene reglas de negocio.
 
-const { esErrorDominio, crearErrorValidacion } = require("../errors/errores");
+
+const { ErrorDominio, ErrorCredenciales, ErrorValidacion } = require("../errors/errores");
 const { validarLogin, texto } = require("../utils/validaciones");
 const { regenerarSesion, guardarSesion, destruirSesion } = require("../utils/sesion");
 const { NOMBRE_COOKIE_SESION, opcionesCookieSesion } = require("../config/cookies");
@@ -21,7 +22,7 @@ function crearAuthController({ authService, config }) {
         req.flash("exito", "Cuenta creada correctamente. Ya puedes iniciar sesión.");
         res.redirect(303, "/login"); // PRG: redirigimos tras guardar
       } catch (error) {
-        if (!esErrorDominio(error)) throw error;
+        if (!(error instanceof ErrorDominio)) throw error;
         // Volvemos a mostrar el formulario conservando nombre y correo
         // (la contraseña nunca se devuelve a la página)
         res.status(error.estado).render("auth/registro", {
@@ -42,7 +43,7 @@ function crearAuthController({ authService, config }) {
       const datos = req.body || {};
       const validacion = validarLogin(datos);
       try {
-        if (!validacion.valido) throw crearErrorValidacion(validacion.errores, validacion.errores.general);
+        if (!validacion.valido) throw new ErrorValidacion(validacion.errores, validacion.errores.general);
 
         const usuario = await authService.autenticar(validacion.valores.email, validacion.valores.password);
 
@@ -53,9 +54,7 @@ function crearAuthController({ authService, config }) {
         await guardarSesion(req);
         res.redirect(303, "/perfil");
       } catch (error) {
-        // Solo gestionamos aquí los errores de credenciales y de validación
-        const esDeLogin = esErrorDominio(error) && (error.tipo === "credenciales" || error.tipo === "validacion");
-        if (!esDeLogin) throw error;
+        if (!(error instanceof ErrorCredenciales || error instanceof ErrorValidacion)) throw error;
         // Mismo mensaje tanto si el correo no existe como si la contraseña falla
         res.status(error.estado).render("auth/login", {
           titulo: "Iniciar sesión",
@@ -69,8 +68,7 @@ function crearAuthController({ authService, config }) {
     async logout(req, res) {
       await destruirSesion(req); // borra la sesión del servidor
       // Retira la cookie del navegador (mismas opciones con las que se creó)
-      const opciones = opcionesCookieSesion(config);
-      delete opciones.maxAge; // para borrar la cookie no hace falta maxAge
+      const { maxAge, ...opciones } = opcionesCookieSesion(config);
       res.clearCookie(NOMBRE_COOKIE_SESION, opciones);
       res.redirect(303, "/login");
     },

@@ -1,2 +1,8 @@
-# archivos que no se sube al git
+# Dependencias
+node_modules/
+
+# Secretos: nunca se suben al repositorio
 .env
+
+# Código TypeScript compilado
+dist/

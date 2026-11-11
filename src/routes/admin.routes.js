@@ -1,3 +1,7 @@
+// ============================================================
+// RUTAS DE ADMINISTRACIÓN (solo rol "admin")
+// ============================================================
+
 const express = require("express");
 const { requiereRol } = require("../middleware/auth");
 

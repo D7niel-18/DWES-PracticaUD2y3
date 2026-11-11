@@ -1,32 +1,34 @@
-function crearUsuariosRepository(datosIniciales = []) {
-  // slice() sin parámetros crea una copia del array
-  const usuarios = datosIniciales.slice();
+// ============================================================
+// REPOSITORIO DE USUARIOS
+// ============================================================
 
-  function siguienteId() {
-    return usuarios.reduce((maximo, usuario) => Math.max(maximo, usuario.id), 0) + 1;
+class UsuariosRepository {
+  constructor(datosIniciales = []) {
+    this.usuarios = [...datosIniciales];
   }
 
-  function todos() {
-    return usuarios.slice();
+  todos() {
+    return [...this.usuarios];
   }
 
-  function buscarPorId(id) {
-    return usuarios.find((usuario) => usuario.id === id);
+  buscarPorId(id) {
+    return this.usuarios.find((usuario) => usuario.id === id);
   }
 
   // Los correos se guardan siempre en minúsculas
-  function buscarPorEmail(email) {
-    return usuarios.find((usuario) => usuario.email === email.toLowerCase());
+  buscarPorEmail(email) {
+    return this.usuarios.find((usuario) => usuario.email === email.toLowerCase());
   }
 
-  function crear(datos) {
-    // Object.assign junta el id nuevo con el resto de datos en un objeto nuevo
-    const nuevo = Object.assign({ id: siguienteId() }, datos);
-    usuarios.push(nuevo);
+  crear(datos) {
+    const nuevo = { id: this.siguienteId(), ...datos };
+    this.usuarios.push(nuevo);
     return nuevo;
   }
 
-  return { todos, buscarPorId, buscarPorEmail, crear };
+  siguienteId() {
+    return this.usuarios.reduce((maximo, usuario) => Math.max(maximo, usuario.id), 0) + 1;
+  }
 }
 
-module.exports = crearUsuariosRepository;
+module.exports = UsuariosRepository;

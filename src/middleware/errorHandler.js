@@ -2,11 +2,11 @@
 // Así todas las páginas de error se ven igual y NUNCA se
 // muestran trazas, rutas internas ni datos sensibles.
 
-const { esErrorDominio, crearErrorNoEncontrado } = require("../errors/errores");
+const { ErrorDominio, ErrorNoEncontrado } = require("../errors/errores");
 
 // Se usa cuando ninguna ruta coincide con la URL pedida
 function rutaNoEncontrada(req, res, next) {
-  next(crearErrorNoEncontrado("La página que buscas no existe."));
+  next(new ErrorNoEncontrado("La página que buscas no existe."));
 }
 
 // Manejador final (Express reconoce que es de errores por tener 4 parámetros)
@@ -16,7 +16,7 @@ function manejarErrores(error, req, res, next) {
   let estado = 500;
   let mensaje = "Ha ocurrido un error interno. Inténtalo más tarde.";
 
-  if (esErrorDominio(error)) {
+  if (error instanceof ErrorDominio) {
     // Error previsto: su mensaje es seguro de mostrar
     estado = error.estado;
     mensaje = error.message;

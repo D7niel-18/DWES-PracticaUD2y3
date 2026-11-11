@@ -1,9 +1,18 @@
+// ============================================================
+// PROTECCIÓN CSRF
+// ------------------------------------------------------------
+// ¿Qué es CSRF? Una web maliciosa podría hacer que TU navegador
+// envíe un formulario a nuestra aplicación sin que tú lo sepas
+// (por ejemplo, cancelar una reserva). Como el navegador adjunta
+// tu cookie de sesión, la petición parecería legítima.
+//
 // Defensa: cada sesión tiene un "token" secreto. Los formularios
 // lo incluyen en un campo oculto y el servidor comprueba que
 // coincide. Una web externa no puede conocer ese token.
+// ============================================================
 
 const crypto = require("crypto");
-const { crearErrorPermisos } = require("../errors/errores");
+const { ErrorPermisos } = require("../errors/errores");
 
 // Crea (si no existe) el token de la sesión y lo pone a disposición de las vistas
 function prepararCsrf(req, res, next) {
@@ -23,13 +32,13 @@ function verificarCsrf(req, res, next) {
   const recibido = req.body ? req.body._csrf : undefined;
 
   if (typeof esperado !== "string" || typeof recibido !== "string") {
-    return next(crearErrorPermisos("Petición rechazada: falta el token de seguridad."));
+    return next(new ErrorPermisos("Petición rechazada: falta el token de seguridad."));
   }
   const a = Buffer.from(esperado);
   const b = Buffer.from(recibido);
   // timingSafeEqual compara sin revelar información por el tiempo que tarda
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-    return next(crearErrorPermisos("Petición rechazada: el token de seguridad no es válido."));
+    return next(new ErrorPermisos("Petición rechazada: el token de seguridad no es válido."));
   }
   next();
 }

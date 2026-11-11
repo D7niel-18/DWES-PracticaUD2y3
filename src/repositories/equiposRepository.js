@@ -1,40 +1,41 @@
-function crearEquiposRepository(datosIniciales = []) {
-  // slice() sin parámetros crea una copia del array
-  const equipos = datosIniciales.slice();
+// Un repositorio es "el almacén": el ÚNICO sitio que toca la lista
+// de equipos. Si mañana usáramos una base de datos, solo habría
+// que cambiar estos archivos y nada más.
 
-  // El siguiente id es el mayor existente + 1
-  function siguienteId() {
-    return equipos.reduce((maximo, equipo) => Math.max(maximo, equipo.id), 0) + 1;
+class EquiposRepository {
+  constructor(datosIniciales = []) {
+    this.equipos = [...datosIniciales];
   }
 
-  function todos() {
-    return equipos.slice();
+  todos() {
+    return [...this.equipos];
   }
 
-  function buscarPorId(id) {
-    return equipos.find((equipo) => equipo.id === id);
+  buscarPorId(id) {
+    return this.equipos.find((equipo) => equipo.id === id);
   }
 
-  function buscarPorCodigo(codigo) {
-    return equipos.find((equipo) => equipo.codigo.toLowerCase() === codigo.toLowerCase());
+  buscarPorCodigo(codigo) {
+    return this.equipos.find((equipo) => equipo.codigo.toLowerCase() === codigo.toLowerCase());
   }
 
-  function crear(datos) {
-    // Object.assign junta el id nuevo con el resto de datos en un objeto nuevo
-    const nuevo = Object.assign({ id: siguienteId() }, datos);
-    equipos.push(nuevo);
+  crear(datos) {
+    const nuevo = { id: this.siguienteId(), ...datos };
+    this.equipos.push(nuevo);
     return nuevo;
   }
 
-  function actualizar(id, cambios) {
-    const equipo = buscarPorId(id);
+  actualizar(id, cambios) {
+    const equipo = this.buscarPorId(id);
     if (!equipo) return undefined;
     Object.assign(equipo, cambios);
     return equipo;
   }
 
-  // Estos son los únicos métodos que el resto de la aplicación puede usar
-  return { todos, buscarPorId, buscarPorCodigo, crear, actualizar };
+  // El siguiente id es el mayor existente + 1
+  siguienteId() {
+    return this.equipos.reduce((maximo, equipo) => Math.max(maximo, equipo.id), 0) + 1;
+  }
 }
 
-module.exports = crearEquiposRepository;
+module.exports = EquiposRepository;
