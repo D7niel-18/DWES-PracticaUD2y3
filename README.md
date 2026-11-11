@@ -1,5 +1,6 @@
 # Explicación de la actividad: Sistema de reserva de equipos informáticos
 
+**Geminis** https://gemini.google.com/share/d/1l-mhmlEYYoi2WEhGdLZvpjcWqapKsVR-?usp=sharing
 **Módulo:** Desarrollo Web en Entorno Servidor (DWES)
 **Tecnologías:** Node.js, Express, EJS, JavaScript y TypeScript
 
