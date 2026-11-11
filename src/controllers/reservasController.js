@@ -1,78 +1,86 @@
-const { ErrorDominio, ErrorValidacion } = require("../errors/errores");
-const { texto, validarId } = require("../utils/validaciones");
-const { validarFechaTurno } = require("../utils/reservas");
-const crearModeloFormularioReserva = require("./modeloFormularioReserva");
+'use strict';
 
-function crearReservasController({ reservasService }) {
+const { AppError, ValidationError } = require('../errors');
+const { setFlash } = require('../middleware/flash');
+const { parseId, validarFechaTurno, validarReserva } = require('../utils/reservas');
+const { construirModeloFormularioReserva } = require('../viewmodels/reservaFormViewModel');
+const { ETIQUETAS_TURNO } = require('../constants');
+
+const aTexto = (valor) => (typeof valor === 'string' ? valor : '');
+
+function crearReservasController({ reservaService }) {
+  async function construirModelo(valores, errores) {
+    const disponibles =
+      valores.fecha && valores.turno
+        ? await reservaService.equiposDisponibles(valores.fecha, valores.turno)
+        : null;
+    return construirModeloFormularioReserva({ valores, errores, disponibles, hoy: reservaService.hoy() });
+  }
+
   return {
-    // GET /reservas/nueva?fecha=2027-02-01&turno=tarde
-    // Esta misma petición GET sirve para consultar la disponibilidad.
-    mostrarFormulario(req, res) {
-      const fecha = texto(req.query.fecha);
-      const turno = texto(req.query.turno);
+    /** Paso 1 (GET): elegir fecha y turno. Paso 2: elegir entre los equipos disponibles. */
+    async mostrarFormulario(req, res) {
+      const entrada = {
+        fecha: aTexto(req.query.fecha),
+        turno: aTexto(req.query.turno),
+      };
+      const valores = { equipoId: parseId(aTexto(req.query.equipoId)), fecha: null, turno: null };
       let errores = {};
-
-      // Solo mostramos errores si el usuario ya ha rellenado algo
-      if (fecha !== "" || turno !== "") {
-        errores = validarFechaTurno(fecha, turno, reservasService.hoy());
+      if (entrada.fecha !== '' || entrada.turno !== '') {
+        const resultado = validarFechaTurno(entrada, reservaService.hoy());
+        errores = resultado.errores;
+        valores.fecha = resultado.datos.fecha;
+        valores.turno = resultado.datos.turno;
       }
-      const modelo = crearModeloFormularioReserva(reservasService, { valores: { fecha, turno }, errores });
-      res.render("reservas/nueva", modelo);
+      const status = Object.keys(errores).length > 0 ? 400 : 200;
+      res.status(status).render('reservas/nueva', await construirModelo(valores, errores));
     },
 
-    // POST /reservas
-    crear(req, res) {
-      const datos = req.body || {};
-      // Nos quedamos SOLO con los campos esperados. El usuario
-      // (usuarioId) sale de la sesión, nunca del formulario.
-      const entrada = {
-        equipoId: datos.equipoId,
-        fecha: texto(datos.fecha),
-        turno: texto(datos.turno),
-      };
+    async crear(req, res) {
+      const resultado = validarReserva(req.body, reservaService.hoy());
+      const volverAlFormulario = async (status, errores) =>
+        res.status(status).render('reservas/nueva', await construirModelo(resultado.datos, errores));
+
+      if (!resultado.valido) {
+        return volverAlFormulario(400, resultado.errores);
+      }
 
       try {
-        reservasService.crear(req.usuario.id, entrada);
-        req.flash("exito", "Reserva creada correctamente.");
-        res.redirect(303, "/mis-reservas"); // PRG
-      } catch (error) {
-        if (!(error instanceof ErrorDominio)) throw error;
-
-        // Conservamos solo los campos que NO tienen error
-        const errores = error.errores || {};
-        const valores = {
-          fecha: errores.fecha ? "" : entrada.fecha,
-          turno: errores.turno ? "" : entrada.turno,
-          equipoId: errores.equipoId ? "" : texto(entrada.equipoId),
-        };
-        const modelo = crearModeloFormularioReserva(reservasService, {
-          valores,
-          errores,
-          mensajeError: error.message,
-        });
-        res.status(error.estado).render("reservas/nueva", modelo);
+        // El usuario sale SIEMPRE de la sesión, nunca del cuerpo de la petición.
+        const reserva = await reservaService.crearReserva({ usuarioId: req.user.id, ...resultado.datos });
+        setFlash(
+          req,
+          'exito',
+          `Reserva #${reserva.id} confirmada para el ${reserva.fecha} (${ETIQUETAS_TURNO[reserva.turno]}).`,
+        );
+        return res.redirect(303, '/mis-reservas');
+      } catch (err) {
+        if (err instanceof AppError && [400, 404, 409].includes(err.status)) {
+          const errores =
+            err instanceof ValidationError && Object.keys(err.errores).length > 0
+              ? err.errores
+              : { general: err.message };
+          return volverAlFormulario(err.status, errores);
+        }
+        throw err;
       }
     },
 
-    // GET /mis-reservas
-    misReservas(req, res) {
-      res.render("reservas/mis-reservas", {
-        titulo: "Mis reservas",
-        reservas: reservasService.listarDeUsuario(req.usuario.id),
-      });
+    async misReservas(req, res) {
+      const reservas = await reservaService.listarDeUsuario(req.user.id);
+      res.render('reservas/mis-reservas', { titulo: 'Mis reservas', reservas });
     },
 
-    // POST /reservas/:id/cancelar
-    cancelar(req, res) {
-      const id = validarId(req.params.id);
-      if (id === null) throw new ErrorValidacion({}, "El identificador de la reserva no es válido.");
-
-      // El servicio comprueba que la reserva es de este usuario
-      reservasService.cancelar(id, req.usuario);
-      req.flash("exito", "Reserva cancelada.");
-      res.redirect(303, "/mis-reservas");
+    async cancelar(req, res) {
+      const id = parseId(req.params.id);
+      if (id === null) {
+        throw new ValidationError({ id: 'El identificador de la reserva no es válido.' });
+      }
+      await reservaService.cancelarPropia(id, req.user);
+      setFlash(req, 'exito', 'La reserva se ha cancelado correctamente.');
+      res.redirect(303, '/mis-reservas');
     },
   };
 }
 
-module.exports = crearReservasController;
+module.exports = { crearReservasController };
